@@ -1,9 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Funciona</title>
+  <meta charset="UTF-8">
+  <title>Ubicación avanzada</title>
 </head>
-<body>
-  <h1>GitHub Pages FUNCIONA ✔️</h1>
+
+<body style="text-align:center;font-family:sans-serif">
+
+<h1>Mi ubicación</h1>
+
+<button onclick="getLocation()">Obtener ubicación</button>
+
+<p id="info"></p>
+
+<button onclick="sendTelegram()">Enviar a Telegram</button>
+
+<script>
+let lat = null;
+let lon = null;
+
+// 🔥 REEMPLAZA ESTO
+const TOKEN = "TU_BOT_TOKEN";
+const CHAT_ID = "TU_CHAT_ID";
+
+function getLocation() {
+  navigator.geolocation.getCurrentPosition((pos) => {
+    lat = pos.coords.latitude;
+    lon = pos.coords.longitude;
+
+    document.getElementById("info").innerText =
+      "Lat: " + lat + " | Lon: " + lon;
+  });
+}
+
+function sendTelegram() {
+  if (!lat || !lon) {
+    alert("Primero obtén la ubicación");
+    return;
+  }
+
+  let message =
+    "Nueva ubicación:\\nLat: " + lat + "\\nLon: " + lon;
+
+  fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: CHAT_ID,
+      text: message
+    })
+  });
+
+  alert("Enviado a Telegram ✔️");
+}
+</script>
+
 </body>
 </html>
