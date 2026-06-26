@@ -5,6 +5,7 @@ mkdir -p /home/claude && cat > /home/claude/ubicacion.html << 'EOF'
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi ubicación</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * {
             margin: 0;
@@ -45,6 +46,13 @@ mkdir -p /home/claude && cat > /home/claude/ubicacion.html << 'EOF'
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            text-align: center;
+        }
+        
+        .btn-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
         }
         
         .btn-ubicacion {
@@ -83,12 +91,15 @@ mkdir -p /home/claude && cat > /home/claude/ubicacion.html << 'EOF'
             border-radius: 10px;
             color: #333;
             font-size: 1em;
-            min-height: 60px;
+            min-height: 70px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             border: 2px dashed #dee2e6;
             transition: all 0.3s ease;
+            text-align: center;
+            line-height: 1.6;
         }
         
         #estado.cargando {
@@ -114,12 +125,11 @@ mkdir -p /home/claude && cat > /home/claude/ubicacion.html << 'EOF'
         #mapa {
             width: 100%;
             height: 400px;
-            border: none;
             border-radius: 12px;
             display: none;
             margin-top: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: all 0.5s ease;
+            z-index: 1;
         }
         
         #mapa.visible {
@@ -128,25 +138,19 @@ mkdir -p /home/claude && cat > /home/claude/ubicacion.html << 'EOF'
         }
         
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .loader {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #dee2e6;
             border-top: 3px solid #667eea;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 8px;
         }
         
         @keyframes spin {
@@ -155,23 +159,10 @@ mkdir -p /home/claude && cat > /home/claude/ubicacion.html << 'EOF'
         }
         
         @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-            }
-            
-            h1 {
-                font-size: 1.8em;
-            }
-            
-            .btn-ubicacion {
-                padding: 12px 30px;
-                font-size: 1em;
-                width: 100%;
-            }
-            
-            #mapa {
-                height: 300px;
-            }
+            .container { padding: 20px; }
+            h1 { font-size: 1.8em; }
+            .btn-ubicacion { padding: 12px 30px; font-size: 1em; width: 100%; }
+            #mapa { height: 300px; }
         }
     </style>
 </head>
@@ -179,22 +170,27 @@ mkdir -p /home/claude && cat > /home/claude/ubicacion.html << 'EOF'
     <div class="container">
         <h1>📍 Mi ubicación</h1>
         
-        <button class="btn-ubicacion" onclick="obtenerUbicacion()">
-            📍 Obtener ubicación
-        </button>
+        <div class="btn-wrapper">
+            <button class="btn-ubicacion" onclick="obtenerUbicacion()">
+                📍 Obtener ubicación
+            </button>
+        </div>
         
         <div id="estado">Haz clic en el botón para obtener tu ubicación</div>
         
-        <iframe id="mapa"></iframe>
+        <div id="mapa"></div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const estado = document.getElementById("estado");
-        const mapa = document.getElementById("mapa");
+        const mapaContenedor = document.getElementById("mapa");
         const btn = document.querySelector(".btn-ubicacion");
+        let mapaObj = null;
+        let marcadorObj = null;
 
-        function actualizarEstado(mensaje, tipo = '') {
-            estado.textContent = mensaje;
+        function actualizarEstado(htmlContenido, tipo = '') {
+            estado.innerHTML = htmlContenido;
             estado.className = tipo;
         }
 
@@ -207,9 +203,9 @@ mkdir -p /home/claude && cat > /home/claude/ubicacion.html << 'EOF'
                 return;
             }
 
-            actualizarEstado("⏳ Obteniendo ubicación...", 'cargando');
-            mapa.className = '';
-            mapa.style.display = 'none';
+            actualizarEstado('<div class="loader"></div>⏳ Obteniendo ubicación...', 'cargando');
+            mapaContenedor.className = '';
+            mapaContenedor.style.display = 'none';
 
             navigator.geolocation.getCurrentPosition(
                 function(posicion) {
@@ -227,25 +223,32 @@ mkdir -p /home/claude && cat > /home/claude/ubicacion.html << 'EOF'
                     }
 
                     actualizarEstado(
-                        `✅ Ubicación obtenida!\n` +
-                        `<span class="coordenadas">Latitud: ${lat.toFixed(6)}</span> | ` +
-                        `<span class="coordenadas">Longitud: ${lon.toFixed(6)}</span>\n` +
-                        `📏 ${precisionMsg} (${precision.toFixed(0)}m)`,
+                        `<strong>✅ ¡Ubicación obtenida!</strong>` +
+                        `<span><span class="coordenadas">Latitud:</span> ${lat.toFixed(6)} | <span class="coordenadas">Longitud:</span> ${lon.toFixed(6)}</span>` +
+                        `<span>Sub-métrica: ${precisionMsg} (${precision.toFixed(0)}m)</span>`,
                         'exito'
                     );
 
-                    mapa.src = 
-                        "https://www.openstreetmap.org/export/embed.html?bbox=" +
-                        (lon - 0.01) + "," +
-                        (lat - 0.01) + "," +
-                        (lon + 0.01) + "," +
-                        (lat + 0.01) +
-                        "&layer=mapnik&marker=" + lat + "," + lon;
-                    
-                    mapa.style.display = 'block';
+                    // Hacer visible el contenedor del mapa antes de inicializar Leaflet
+                    mapaContenedor.style.display = 'block';
+                    mapaContenedor.classList.add('visible');
+
+                    // Inicializar o actualizar el mapa nativo sin recurrir a iframes externos
+                    if (!mapaObj) {
+                        mapaObj = L.map('mapa').setView([lat, lon], 16);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; OpenStreetMap'
+                        }).addTo(mapaObj);
+                        marcadorObj = L.marker([lat, lon]).addTo(mapaObj);
+                    } else {
+                        mapaObj.setView([lat, lon], 16);
+                        marcadorObj.setLatLng([lat, lon]);
+                    }
+
+                    // Forzar el redibujado correcto debido al cambio dinámico de display
                     setTimeout(() => {
-                        mapa.className = 'visible';
-                    }, 50);
+                        mapaObj.invalidateSize();
+                    }, 200);
                     
                     btn.disabled = false;
                 },
@@ -275,9 +278,8 @@ mkdir -p /home/claude && cat > /home/claude/ubicacion.html << 'EOF'
             );
         }
 
-        // Agregar soporte para tecla Enter
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !btn.disabled) {
                 obtenerUbicacion();
             }
         });
@@ -285,4 +287,5 @@ mkdir -p /home/claude && cat > /home/claude/ubicacion.html << 'EOF'
 </body>
 </html>
 EOF
-echo "✅ Archivo creado en /home/claude/ubicacion.html"
+echo "✅ Archivo creado y mejorado con éxito en /home/claude/ubicacion.html"
+    
