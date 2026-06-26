@@ -1,10 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Mi Web</title>
+  <meta charset="UTF-8">
+  <title>Geolocalización</title>
 </head>
-<body>
-  <h1>Hola 👋</h1>
-  <p>Mi página ya está en internet</p>
+<body style="text-align:center;font-family:sans-serif;">
+
+  <h1>Prueba de ubicación</h1>
+
+  <button onclick="getLocation()">
+    Obtener mi ubicación
+  </button>
+
+  <p id="out"></p>
+
+  <script>
+    function getLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition, showError);
+      } else {
+        document.getElementById("out").innerText =
+          "Tu navegador no soporta geolocalización";
+      }
+    }
+
+    function showPosition(position) {
+      document.getElementById("out").innerText =
+        "Lat: " + position.coords.latitude +
+        " | Lon: " + position.coords.longitude;
+    }
+
+    function showError(error) {
+      document.getElementById("out").innerText =
+        "Permiso denegado o error";
+    }
+  </script>
+
 </body>
 </html>
