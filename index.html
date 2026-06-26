@@ -2,39 +2,42 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Geolocalización</title>
+  <title>Mi ubicación en mapa</title>
 </head>
+
 <body style="text-align:center;font-family:sans-serif;">
 
-  <h1>Prueba de ubicación</h1>
+  <h1>Mi ubicación en mapa</h1>
 
   <button onclick="getLocation()">
-    Obtener mi ubicación
+    Obtener ubicación
   </button>
 
-  <p id="out"></p>
+  <p id="info"></p>
+
+  <iframe id="map"
+          width="100%"
+          height="400"
+          style="border:0; margin-top:10px;"
+          loading="lazy">
+  </iframe>
 
   <script>
     function getLocation() {
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition, showError);
+        navigator.geolocation.getCurrentPosition(showMap, showError);
       } else {
-        document.getElementById("out").innerText =
+        document.getElementById("info").innerText =
           "Tu navegador no soporta geolocalización";
       }
     }
 
-    function showPosition(position) {
-      document.getElementById("out").innerText =
-        "Lat: " + position.coords.latitude +
-        " | Lon: " + position.coords.longitude;
-    }
+    function showMap(position) {
+      let lat = position.coords.latitude;
+      let lon = position.coords.longitude;
 
-    function showError(error) {
-      document.getElementById("out").innerText =
-        "Permiso denegado o error";
-    }
-  </script>
+      document.getElementById("info").innerText =
+        "Lat: " + lat + " | Lon: " + lon;
 
-</body>
-</html>
+      document.getElementById("map").src =
+        "https://www.google.com/maps?q="
